@@ -1,2 +1,4 @@
 employees.js
 business_rules.txt
+node_modules
+dist
