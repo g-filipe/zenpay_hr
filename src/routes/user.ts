@@ -1,8 +1,9 @@
 import express, { Request, Response } from "express";
-import { User } from "../models/user.js";
+import { User } from "@models/user.js";
 import mongoose from "mongoose";
 import { encryptPassword } from "../password.js";
-import { verifyToken } from "../middleware/authenticate.js";
+import { verifyToken } from "@middlewares/authenticate.js";
+
 
 export const userRouter = express.Router();
 

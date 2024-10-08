@@ -1,8 +1,8 @@
-import { employeeRouter } from "./routes/employees.js";
+import { employeeRouter } from "@routes/employees.js";
 import { mongoConfig } from "./mongoConfig.js";
 import express from "express";
-import { userRouter } from "./routes/user.js";
-import { loginRouter } from "./routes/login.js";
+import { userRouter } from "@routes/user.js";
+import { loginRouter } from "@routes/login.js";
 
 await mongoConfig();
 

@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { Employee } from "../models/employee.js";
+import { Employee } from "@models/employee.js";
 import mongoose from "mongoose";
 
 export const employeeRouter = express.Router();
