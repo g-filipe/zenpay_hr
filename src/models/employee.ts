@@ -8,6 +8,18 @@ const schema = new Schema({
   department: { type: String, required: true },
   workShift: { type: String, required: true },
   workSchedule: { type: String, required: true },
+  holidayWorkDays: {
+    type: Map,
+    of: [Number],
+  },
+  weekendWorkDays: {
+    type: Map,
+    of: [Number],
+  },
+  unjustifiedAbsences: {
+    type: Map,
+    of: [Number],
+  },
 });
 
 export const Employee = mongoose.model("Employee", schema);

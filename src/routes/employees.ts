@@ -50,9 +50,13 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    const updatedEmployee = instanceEmployeeFromRequest(req);
-    updatedEmployee._id = new mongoose.Types.ObjectId(employeeId);
-    await saveEmployee(updatedEmployee, res);
+    employee.name = req.body.name;
+    employee.cpf = req.body.cpf;
+    employee.department = req.body.department;
+    employee.workShift = req.body.workShift;
+    employee.workSchedule = req.body.workSchedule;
+
+    await employee.save();
   } catch (error) {
     res.status(500).json({ error: "Failed to update employee" });
   }
@@ -75,6 +79,33 @@ employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to delete employee" });
   }
 });
+
+employeeRouter.put(
+  "/employee/:id/workdays",
+  async (req: Request, res: Response) => {
+    const employeeId = req.params.id;
+    try {
+      const employee = await searchEmployeeById(employeeId);
+      if (!employee) {
+        res.status(404).json({ error: `Employee ${employeeId} not found` });
+        return;
+      }
+
+      const period = req.body.period;
+
+      await Employee.findByIdAndUpdate(employeeId, {
+        [`holidayWorkDays.${period}`]: req.body.holidayWorkDays,
+        [`weekendWorkDays.${period}`]: req.body.weekendWorkDays,
+        [`unjustifiedAbsences.${period}`]: req.body.unjustifiedAbsences,
+      });
+
+      res.status(200).send();
+
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update employee" });
+    }
+  }
+);
 
 function instanceEmployeeFromRequest(req: Request) {
   return new Employee({
