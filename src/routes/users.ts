@@ -35,7 +35,7 @@ userRouter.post("/user", async (req: Request, res: Response) => {
     const newUser = instanceUserFromRequest(req);
     const user = await searchUserByEmail(newUser.email);
     if (user) {
-      res.status(400).json({ error: "Email already in use" }); //!
+      res.status(400).json({ error: "Email already in use" });
       return;
     }
     await saveUser(newUser, res);

@@ -16,7 +16,7 @@ employeeRouter.get("/employee", async (_, res: Response) => {
 employeeRouter.get("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = req.params.id;
   try {
-    const employee = await Employee.findById(employeeId);
+    const employee = await searchEmployeeById(employeeId);
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found!` });
       return;
@@ -57,6 +57,9 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
     employee.workSchedule = req.body.workSchedule;
 
     await employee.save();
+
+    res.status(200).send();
+
   } catch (error) {
     res.status(500).json({ error: "Failed to update employee" });
   }
@@ -65,7 +68,7 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
 employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = req.params.id;
   try {
-    const employee = await Employee.findById(employeeId);
+    const employee = await searchEmployeeById(employeeId);
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found!` });
       return;
@@ -97,9 +100,10 @@ employeeRouter.put(
         [`holidayWorkDays.${period}`]: req.body.holidayWorkDays,
         [`weekendWorkDays.${period}`]: req.body.weekendWorkDays,
         [`unjustifiedAbsences.${period}`]: req.body.unjustifiedAbsences,
+        [`unjustifiedAbsencesPreviousMonth.${period}`]: req.body.unjustifiedAbsencesPreviousMonth,
       });
 
-      res.status(200).send();
+      res.status(200).send(`${employee.name} - escala de fim de semanas e feriados atualizados`);
 
     } catch (error) {
       res.status(500).json({ error: "Failed to update employee" });
