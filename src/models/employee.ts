@@ -3,14 +3,16 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 export interface IEmployee {
+  _id: string,
   name: string;
   cpf: string;
   department: string;
   workShift: string;
   workSchedule: string;
-  holidayWorkDays: { [key: string]: number[] };
-  weekendWorkDays: { [key: string]: number[] };
-  unjustifiedAbsences: { [key: string]: number[] };
+  holidayWorkDays: Map<string, number[]>;
+  weekendWorkDays: Map<string, number[]>;
+  unjustifiedAbsences: Map<string, number[]>;
+  unjustifiedAbsencesPreviousMonth: Map<string, number[]>;
 }
 
 const schema = new Schema<IEmployee>({
@@ -28,6 +30,10 @@ const schema = new Schema<IEmployee>({
     of: [Number],
   },
   unjustifiedAbsences: {
+    type: Map,
+    of: [Number],
+  },
+  unjustifiedAbsencesPreviousMonth: {
     type: Map,
     of: [Number],
   },

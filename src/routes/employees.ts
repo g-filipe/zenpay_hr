@@ -57,6 +57,9 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
     employee.workSchedule = req.body.workSchedule;
 
     await employee.save();
+
+    res.status(200).send();
+
   } catch (error) {
     res.status(500).json({ error: "Failed to update employee" });
   }
@@ -97,9 +100,10 @@ employeeRouter.put(
         [`holidayWorkDays.${period}`]: req.body.holidayWorkDays,
         [`weekendWorkDays.${period}`]: req.body.weekendWorkDays,
         [`unjustifiedAbsences.${period}`]: req.body.unjustifiedAbsences,
+        [`unjustifiedAbsencesPreviousMonth.${period}`]: req.body.unjustifiedAbsencesPreviousMonth,
       });
 
-      res.status(200).send();
+      res.status(200).send(`${employee.name} - escala de fim de semanas e feriados atualizados`);
 
     } catch (error) {
       res.status(500).json({ error: "Failed to update employee" });
