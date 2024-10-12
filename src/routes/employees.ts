@@ -16,7 +16,7 @@ employeeRouter.get("/employee", async (_, res: Response) => {
 employeeRouter.get("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = req.params.id;
   try {
-    const employee = await Employee.findById(employeeId);
+    const employee = await searchEmployeeById(employeeId);
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found!` });
       return;
@@ -65,7 +65,7 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
 employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = req.params.id;
   try {
-    const employee = await Employee.findById(employeeId);
+    const employee = await searchEmployeeById(employeeId);
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found!` });
       return;

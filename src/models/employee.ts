@@ -2,7 +2,18 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
-const schema = new Schema({
+export interface IEmployee {
+  name: string;
+  cpf: string;
+  department: string;
+  workShift: string;
+  workSchedule: string;
+  holidayWorkDays: { [key: string]: number[] };
+  weekendWorkDays: { [key: string]: number[] };
+  unjustifiedAbsences: { [key: string]: number[] };
+}
+
+const schema = new Schema<IEmployee>({
   name: { type: String, required: true },
   cpf: { type: String, required: true },
   department: { type: String, required: true },

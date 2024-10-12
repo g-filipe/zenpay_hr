@@ -81,12 +81,3 @@ export function isHoliday(day : number, month : number) {
 export function paddingZero(date : number) {
   return String(date).padStart(2, '0')
 }
-// conjunto de dis
-
-// OUTUBRO
-// 31 DIAS
-// 23 UTEIS
-// 8 FDS 
-
-// JORNADA 6H = DIAS UTEIS VA/VR $ X DIAS UTEIS
-// JORNADA 8H = (6X1) -27 DIAS -> 23 UTEIS (8H) $2 + 4 DIAS FDS $1 4DIASFDS FERIADO? $2
