@@ -1,0 +1,61 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Employee {
+  id            Int      @id @default(autoincrement())
+  createdAt     DateTime @default(now())
+  cpf           String   @unique
+  name          String
+  work_schedule String
+  work_shift    String
+
+  department      Department   @relation(name: "DepartmentEmployee", fields: [department_id], references: [id])
+  department_id   Int
+  led_departments Department[] @relation(name: "LeadershipDepartments")
+
+  meal_vouchers MealVoucher[]
+}
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  name      String
+
+  employees Employee[] @relation(name: "DepartmentEmployee")
+  leader    Employee   @relation(name: "LeadershipDepartments", fields: [leader_id], references: [id])
+  leader_id Int
+}
+
+model MealVoucher {
+  id                                  Int      @id @default(autoincrement())
+  createdAt                           DateTime @default(now())
+  worked_holidays                     Int[]
+  worked_weekends                     Int[]
+  vacation                            Int[]
+  unjustified_absences                Int[]
+  unjustified_absences_previous_month Int[]
+  amount                              Float
+
+  employee    Employee @relation(fields: [employee_id], references: [id])
+  employee_id Int
+
+  period Period @relation(fields: [month, year], references: [month, year])
+  month  Int
+  year   Int
+}
+
+model Period {
+  createdAt DateTime @default(now())
+  month     Int
+  year      Int
+
+  meal_vouchers MealVoucher[]
+
+  @@id([month, year])
+}
