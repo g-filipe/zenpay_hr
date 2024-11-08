@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc && tsc-alias",
     "dev": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\" \"node --watch dist/index.js\")",
-    "migrate-dev": "prisma migrate dev"
+    "migrate-dev": "prisma migrate dev",
+    "generate-client": "prisma generate"
   },
   "author": "",
   "license": "ISC",
@@ -21,7 +22,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@prisma/client": "^5.21.1",
+    "@prisma/client": "^5.22.0",
     "@types/express": "^5.0.0",
     "bcryptjs": "^2.4.3",
     "concurrently": "^9.0.1",

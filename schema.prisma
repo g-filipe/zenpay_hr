@@ -15,21 +15,31 @@ model Employee {
   work_schedule String
   work_shift    String
 
-  department      Department   @relation(name: "DepartmentEmployee", fields: [department_id], references: [id])
-  department_id   Int
-  led_departments Department[] @relation(name: "LeadershipDepartments")
+  led_departments Department[]  @relation("LeadershipDepartments")
+  meal_vouchers   MealVoucher[]
 
-  meal_vouchers MealVoucher[]
+  departments EmployeeDepartments[]
 }
 
 model Department {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-  name      String
+  name      String   @unique
 
-  employees Employee[] @relation(name: "DepartmentEmployee")
-  leader    Employee   @relation(name: "LeadershipDepartments", fields: [leader_id], references: [id])
-  leader_id Int
+  employees EmployeeDepartments[]
+
+  leader    Employee? @relation(name: "LeadershipDepartments", fields: [leader_id], references: [id])
+  leader_id Int?
+}
+
+model EmployeeDepartments {
+  employee      Employee   @relation(fields: [employee_id], references: [id])
+  employee_id   Int
+  department    Department @relation(fields: [department_id], references: [id])
+  department_id Int
+
+  @@id([employee_id, department_id])
+	@@map("EmployeeDapartments")
 }
 
 model MealVoucher {
