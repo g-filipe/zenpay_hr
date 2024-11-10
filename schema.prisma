@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 model Employee {
@@ -45,34 +46,23 @@ model EmployeeDepartments {
 }
 
 model Workdays {
-  created_at                          DateTime @default(now())
-  worked_holidays                     Int[]
-  worked_weekends                     Int[]
-  vacation                            Int[]
-  unjustified_absences                Int[]
-  unjustified_absences_previous_month Int[]
+  created_at           DateTime @default(now())
+  month                Int
+  year                 Int
+  worked_holidays      Int[]
+  worked_weekends      Int[]
+  vacation             Int[]
+  unjustified_absences Int[]
+  worked_6h            Int
+  worked_8h            Int
+  total_worked_days    Int
 
   employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id Int
 
-  period Period @relation(fields: [month, year], references: [month, year])
-  month  Int
-  year   Int
-
   MealVoucher MealVoucher?
 
   @@id([employee_id, month, year])
-}
-
-model Period {
-  created_at DateTime @default(now())
-  month      Int
-  year       Int
-
-  work_days    Workdays[]
-  meal_voucher MealVoucher[]
-
-  @@id([month, year])
 }
 
 model MealVoucher {
@@ -80,15 +70,19 @@ model MealVoucher {
   value_6h   Float
   value_8h   Float
   amount     Float
+  month      Int
+  year       Int
 
   employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id Int
 
-  period Period @relation(fields: [month, year], references: [month, year])
-  month  Int
-  year   Int
-
   work_days Workdays @relation(fields: [employee_id, month, year], references: [employee_id, month, year])
 
   @@id([employee_id, month, year])
+}
+
+model Configs {
+  key   String @id
+  value String
+  type  String
 }
