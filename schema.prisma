@@ -33,17 +33,16 @@ model Department {
 }
 
 model EmployeeDepartments {
-  employee      Employee   @relation(fields: [employee_id], references: [id])
+  employee      Employee   @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   employee_id   Int
-  department    Department @relation(fields: [department_id], references: [id])
+  department    Department @relation(fields: [department_id], references: [id], onDelete: Cascade)
   department_id Int
 
   @@id([employee_id, department_id])
-	@@map("EmployeeDapartments")
+  @@map("EmployeeDapartments")
 }
 
 model MealVoucher {
-  id                                  Int      @id @default(autoincrement())
   createdAt                           DateTime @default(now())
   worked_holidays                     Int[]
   worked_weekends                     Int[]
@@ -58,6 +57,8 @@ model MealVoucher {
   period Period @relation(fields: [month, year], references: [month, year])
   month  Int
   year   Int
+
+  @@id([employee_id, month, year])
 }
 
 model Period {

@@ -37,25 +37,7 @@ employeeRouter.get("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
 
   try {
-    const employee = await prisma.employee.findUnique({
-      where: {
-        id: employeeId,
-      },
-      include: {
-        departments: {
-          select: {
-            department: {
-              select: {
-                id: true,
-                name: true,
-                leader_id: true,
-                leader: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const employee = await findEmployeeById(employeeId);
 
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found!` });
@@ -90,7 +72,8 @@ employeeRouter.post("/employee", async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      message: `Register ID: ${newEmployee.id} Employee: ${newEmployee.name} Status: Saved Successfully`,
+      message: "Registerd Successfully",
+      employee: newEmployee,
     });
   } catch (error) {
     console.error(error);
@@ -101,11 +84,8 @@ employeeRouter.post("/employee", async (req: Request, res: Response) => {
 employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
   try {
-    const employee = await prisma.employee.findUnique({
-      where: {
-        id: employeeId,
-      },
-    });
+    const employee = await findEmployeeById(employeeId);
+
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found` });
       return;
@@ -125,7 +105,7 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
         })),
       });
 
-      return prisma.employee.update({
+      return await prisma.employee.update({
         where: {
           id: employeeId,
         },
@@ -139,7 +119,8 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      message: `Register ID: ${updatedEmployee.id} Employee: ${updatedEmployee.name} Status: Updated Successfully`,
+      message: "Updated Successfully",
+      updatedEmployee,
     });
   } catch (error) {
     console.error(error);
@@ -150,29 +131,17 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
 employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
   try {
-    const employee = await prisma.employee.findUnique({
-      where: {
-        id: employeeId,
-      },
-    });
+    const employee = await findEmployeeById(employeeId);
 
     if (!employee) {
-      res.status(404).json({ error: `Employee ${employeeId} not found!` });
+      res.status(404).json({ error: `Employee ${employeeId} not found` });
       return;
     }
 
-    await prisma.$transaction(async (prisma) => {
-      await prisma.employeeDepartments.deleteMany({
-        where: {
-          employee_id: employeeId,
-        },
-      });
-
-      return prisma.employee.delete({
-        where: {
-          id: employeeId,
-        },
-      });
+    await prisma.employee.delete({
+      where: {
+        id: employeeId,
+      },
     });
 
     res.status(200).json({
@@ -184,42 +153,32 @@ employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
   }
 });
 
-// employeeRouter.put(
-//   "/employee/:id/workdays",
-//   async (req: Request, res: Response) => {
-//     const employeeId = req.params.id;
-//     try {
-//       const employee = await searchEmployeeById(employeeId);
-//       if (!employee) {
-//         res.status(404).json({ error: `Employee ${employeeId} not found` });
-//         return;
-//       }
-
-//       const period = req.body.period;
-
-//       await Employee.findByIdAndUpdate(employeeId, {
-//         [`holidayWorkDays.${period}`]: req.body.holidayWorkDays,
-//         [`weekendWorkDays.${period}`]: req.body.weekendWorkDays,
-//         [`unjustifiedAbsences.${period}`]: req.body.unjustifiedAbsences,
-//         [`unjustifiedAbsencesPreviousMonth.${period}`]:
-//           req.body.unjustifiedAbsencesPreviousMonth,
-//       });
-
-//       res
-//         .status(200)
-//         .send(
-//           `${employee.name} - escala de fim de semanas e feriados atualizados`
-//         );
-//     } catch (error) {
-//       res.status(500).json({ error: "Failed to update employee" });
-//     }
-//   }
-// );
-
 async function verifyCpfExistence(cpf: string) {
   return await prisma.employee.findUnique({
     where: {
       cpf,
+    },
+  });
+}
+
+export async function findEmployeeById(employeeId: number) {
+  return await prisma.employee.findUnique({
+    where: {
+      id: employeeId,
+    },
+    include: {
+      departments: {
+        select: {
+          department: {
+            select: {
+              id: true,
+              name: true,
+              leader_id: true,
+              leader: true,
+            },
+          },
+        },
+      },
     },
   });
 }
