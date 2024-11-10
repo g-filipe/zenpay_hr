@@ -3,7 +3,7 @@ import { employeeRouter } from "@routes/employees.js";
 import express from "express";
 import { userRouter } from "@routes/users.js";
 import { loginRouter } from "@routes/login.js";
-import { benefitRouter } from "@routes/benefits.js";
+import { benefitRouter } from "@routes/mealVoucher.js";
 import { departmentRouter } from "@routes/department.js";
 
 // await mongoConfig();

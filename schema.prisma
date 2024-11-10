@@ -9,22 +9,24 @@ generator client {
 
 model Employee {
   id            Int      @id @default(autoincrement())
-  createdAt     DateTime @default(now())
+  created_at    DateTime @default(now())
   cpf           String   @unique
   name          String
   work_schedule String
   work_shift    String
 
-  led_departments Department[]  @relation("LeadershipDepartments")
-  meal_vouchers   MealVoucher[]
+  led_departments Department[]          @relation("LeadershipDepartments")
+  departments     EmployeeDepartments[]
 
-  departments EmployeeDepartments[]
+  work_days Workdays[]
+
+  meal_vouchers MealVoucher[]
 }
 
 model Department {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  name      String   @unique
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  name       String   @unique
 
   employees EmployeeDepartments[]
 
@@ -42,14 +44,13 @@ model EmployeeDepartments {
   @@map("EmployeeDapartments")
 }
 
-model MealVoucher {
-  createdAt                           DateTime @default(now())
+model Workdays {
+  created_at                          DateTime @default(now())
   worked_holidays                     Int[]
   worked_weekends                     Int[]
   vacation                            Int[]
   unjustified_absences                Int[]
   unjustified_absences_previous_month Int[]
-  amount                              Float
 
   employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id Int
@@ -58,15 +59,36 @@ model MealVoucher {
   month  Int
   year   Int
 
+  MealVoucher MealVoucher?
+
   @@id([employee_id, month, year])
 }
 
 model Period {
-  createdAt DateTime @default(now())
-  month     Int
-  year      Int
+  created_at DateTime @default(now())
+  month      Int
+  year       Int
 
-  meal_vouchers MealVoucher[]
+  work_days    Workdays[]
+  meal_voucher MealVoucher[]
 
   @@id([month, year])
+}
+
+model MealVoucher {
+  created_at DateTime @default(now())
+  value_6h   Float
+  value_8h   Float
+  amount     Float
+
+  employee    Employee @relation(fields: [employee_id], references: [id])
+  employee_id Int
+
+  period Period @relation(fields: [month, year], references: [month, year])
+  month  Int
+  year   Int
+
+  work_days Workdays @relation(fields: [employee_id, month, year], references: [employee_id, month, year])
+
+  @@id([employee_id, month, year])
 }

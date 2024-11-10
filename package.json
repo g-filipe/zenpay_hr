@@ -8,6 +8,7 @@
     "build": "tsc && tsc-alias",
     "dev": "tsc && (concurrently \"tsc -w\" \"tsc-alias -w\" \"node --watch dist/index.js\")",
     "migrate-dev": "prisma migrate dev",
+    "migrate-dev-create-only": "prisma migrate dev --create-only",
     "generate-client": "prisma generate"
   },
   "author": "",
