@@ -2,10 +2,11 @@ import express, { Request, Response } from 'express';
 import { getTotalWorkshift } from 'workdaysService.js';
 import { findEmployeeById } from './employees.js';
 import { prisma } from '@db/prisma.js';
+import { calculateMealVoucher } from 'benefits/meal-voucher/mealVoucherService.js';
 
-export const workdaysRouter = express.Router();
+export const mealVoucherRouter = express.Router();
 
-workdaysRouter.get('/employee/workdays', async (req: Request, res: Response) => {
+mealVoucherRouter.get('/employee/benefits/meal-voucher', async (req: Request, res: Response) => {
   try {
     const workdaysListByPeriod = await prisma.employee.findMany({
       where: {
@@ -26,6 +27,12 @@ workdaysRouter.get('/employee/workdays', async (req: Request, res: Response) => 
             year: Number(req.query.year),
           },
         },
+        meal_vouchers: {
+          where: {
+            month: Number(req.query.month),
+            year: Number(req.query.year),
+          },
+        },
       },
     });
 
@@ -38,7 +45,7 @@ workdaysRouter.get('/employee/workdays', async (req: Request, res: Response) => 
   }
 });
 
-workdaysRouter.get('/employee/:id/workdays', async (req: Request, res: Response) => {
+mealVoucherRouter.get('/employee/:id/benefits/meal-voucher', async (req: Request, res: Response) => {
   try {
     const { month, year } = req.query;
 
@@ -70,6 +77,15 @@ workdaysRouter.get('/employee/:id/workdays', async (req: Request, res: Response)
             year: year ? Number(year) : undefined,
           },
         },
+        meal_vouchers: {
+          omit: {
+            employee_id: true,
+          },
+          where: {
+            month: month ? Number(month) : undefined,
+            year: year ? Number(year) : undefined,
+          },
+        },
       },
     });
 
@@ -87,87 +103,71 @@ workdaysRouter.get('/employee/:id/workdays', async (req: Request, res: Response)
   }
 });
 
-workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response) => {
+mealVoucherRouter.post('/employee/:id/benefits/meal-voucher', async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
+  const month = Number(req.body.month);
+  const year = Number(req.body.year);
+
   try {
-    const employee = await findEmployeeById(employeeId);
+    const employee = await prisma.employee.findUnique({
+      where: {
+        id: employeeId,
+      },
+      include: {
+        work_days: {
+          where: {
+            month,
+            year,
+          },
+        },
+        meal_vouchers: {
+          where: {
+            month,
+            year,
+          },
+        },
+      },
+    });
 
     if (!employee) {
       res.status(404).json({ error: `Employee ${employeeId} not found` });
       return;
     }
 
-    const { worked_holidays, worked_weekends, vacation, unjustified_absences, month, year } = req.body;
+    if (employee.work_days.length == 0) {
+      res.status(400).json({ error: `No workdays registered for this Employee ${employeeId} - ${employee.name}.` });
+      return;
+    }
+   const mealVoucher = await prisma.$transaction(async (prisma) => {
+      if (employee.meal_vouchers.length != 0) {
+        await prisma.mealVoucher.delete({
+          where: {
+            employee_id_month_year: {
+              employee_id: employeeId,
+              month,
+              year,
+            },
+          },
+        });
+      }
 
-    const { total_worked_6h, total_worked_8h } = await getTotalWorkshift(
-      employee,
-      year,
-      month,
-      worked_holidays,
-      unjustified_absences,
-      worked_weekends
-    );
+      const data = await calculateMealVoucher(employee, employee.work_days[0]);
 
-    const data = {
-      worked_holidays,
-      worked_weekends,
-      vacation,
-      unjustified_absences,
-      total_worked_days: total_worked_6h + total_worked_8h,
-      worked_6h: total_worked_6h,
-      worked_8h: total_worked_8h,
-    };
-
-    await prisma.workdays.upsert({
-      where: {
-        employee_id_month_year: {
+      return await prisma.mealVoucher.create({
+        data: {
           employee_id: employeeId,
           month,
           year,
+          ...data,
         },
-      },
-      update: {
-        ...data,
-      },
-      create: {
-        employee_id: employeeId,
-        ...data,
-        month,
-        year,
-      },
+      });
     });
-
-    res.status(200).send(`${employee.name} - escala de fim de semanas e feriados atualizados`);
+    res.status(201).json({
+      message: `Employee ${employeeId} - ${employee.name} has a new meal voucher benefit registered successfully for the period ${month}/${year}.`,
+      mealVoucher,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Failed to update employee' });
-  }
-});
-
-workdaysRouter.delete('/employee/:id/workdays', async (req: Request, res: Response) => {
-  const employeeId = Number(req.params.id);
-  try {
-    const { month, year } = req.query;
-    const employee = findEmployeeById(employeeId);
-
-    if (!employee) {
-      res.status(404).json({ error: `Employee ${req.params.id} not found` });
-      return;
-    }
-
-    const deletedAmount = await prisma.workdays.deleteMany({
-      where: {
-        employee_id: employeeId,
-        month: month ? Number(month) : undefined,
-        year: year ? Number(year) : undefined,
-      },
-    });
-
-    res.status(200).json({
-      message: `Deleted ${deletedAmount.count} workday(s) successfully`,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to delete workdays' });
+    res.status(500).json({ error: `Failed to register a meal voucher benefit for the period ${month}/${year} ` });
   }
 });

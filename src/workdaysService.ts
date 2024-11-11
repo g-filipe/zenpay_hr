@@ -1,7 +1,7 @@
 import type { Employee } from "@prisma/client";
 import { isHoliday } from "calendar/holiday.js";
 
-const daysOfWeek = [
+export const daysOfWeek = [
   "Sunday",
   "Monday",
   "Tuesday",
@@ -89,11 +89,11 @@ function getWorkShiftByDay(
   throw "Failed to get workshift for this day. Please check the employee/workdays informations";
 }
 
-function isBusinessDay(day: string) {
+export function isBusinessDay(day: string) {
   return day != "Sunday" && day != "Saturday";
 }
 
-function getDayOfWeek(day: number, month: number, year: number) {
+export function getDayOfWeek(day: number, month: number, year: number) {
   const i = new Date(year, month - 1, day).getDay();
   return daysOfWeek[i];
 }

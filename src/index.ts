@@ -5,6 +5,7 @@ import { userRouter } from "@routes/users.js";
 import { loginRouter } from "@routes/login.js";
 import { workdaysRouter as workdaysRouter } from "@routes/workdays.js";
 import { departmentRouter } from "@routes/department.js";
+import { mealVoucherRouter } from "@routes/mealVoucher.js";
 
 // await mongoConfig();
 
@@ -13,6 +14,7 @@ const port = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(mealVoucherRouter);
 app.use(workdaysRouter);
 app.use(employeeRouter);
 app.use(userRouter);

@@ -66,12 +66,19 @@ model Workdays {
 }
 
 model MealVoucher {
-  created_at DateTime @default(now())
-  value_6h   Float
-  value_8h   Float
-  amount     Float
-  month      Int
-  year       Int
+  created_at                          DateTime @default(now())
+  month                               Int
+  year                                Int
+  total_value_6h                      Float
+  total_value_8h                      Float
+  total_discount_6h                   Float
+  total_discount_8h                   Float
+  total_discount                      Float
+  total_days_6h_discounted            Float
+  total_days_8h_discounted            Float
+  total_days_discounted               Float
+  unjustified_absences_previous_month Int[]
+  amount                              Float
 
   employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id Int
