@@ -4,6 +4,8 @@ import { findEmployeeById } from './employees.js';
 import { prisma } from '@db/prisma.js';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
+import { generateMealVoucher } from 'benefits/meal-voucher/mealVoucherService.js';
+import { Employee } from '@models/employee.js';
 
 export const workdaysRouter = express.Router();
 
@@ -143,7 +145,7 @@ workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Respo
         worked_days,
       };
 
-      await prisma.workdays.upsert({
+      const workdaysSheet = await prisma.workdays.upsert({
         where: {
           employee_id_month_year: {
             employee_id: employeeId,
@@ -161,7 +163,9 @@ workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Respo
           year,
         },
       });
+      await generateMealVoucher(employee, workdaysSheet);
     }
+
     res.status(200).send(`Employees workdays updated successfully.`);
   } catch (error) {
     console.log(error);
@@ -225,10 +229,10 @@ workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response)
       },
     });
 
-    res.status(200).send(`${employee.name} - escala de fim de semanas e feriados atualizados`);
+    res.status(200).send(`${employee.name} - worked days sheet updated`);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: 'Failed to update employee' });
+    res.status(500).json({ error: 'Failed to update employee worked days sheet' });
   }
 });
 

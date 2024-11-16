@@ -101,3 +101,27 @@ function calculateMealVoucherDiscountByDayOfPreviousMonth(
 
   return diaryMealVoucher6h;
 }
+
+export async function generateMealVoucher(employee: Employee, workdays: Workdays) {
+  return await prisma.$transaction(async (prisma) => {
+    await prisma.mealVoucher.deleteMany({
+      where: {
+        employee_id: employee.id,
+        month: workdays.month,
+        year: workdays.year,
+      },
+    });
+
+    const data = await calculateMealVoucher(employee, workdays);
+
+    return await prisma.mealVoucher.create({
+      data: {
+        employee_id: employee.id,
+        month: workdays.month,
+        year: workdays.year,
+        ...data,
+      },
+    });
+  });
+}
+
