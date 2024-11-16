@@ -54,9 +54,13 @@ model Workdays {
   worked_weekends      Int[]
   vacation             Int[]
   unjustified_absences Int[]
+  unpaid_leave         Int[]
   worked_6h            Int
+  worked_days_6h       Int[]
   worked_8h            Int
+  worked_days_8h       Int[]
   total_worked_days    Int
+  worked_days          Int[]
 
   employee    Employee @relation(fields: [employee_id], references: [id])
   employee_id Int

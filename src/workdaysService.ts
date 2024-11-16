@@ -1,15 +1,7 @@
-import type { Employee } from "@prisma/client";
-import { isHoliday } from "calendar/holiday.js";
+import type { Employee } from '@prisma/client';
+import { isHoliday } from 'calendar/holiday.js';
 
-export const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+export const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export async function getTotalWorkshift(
   employee: Employee,
@@ -17,11 +9,16 @@ export async function getTotalWorkshift(
   month: number,
   worked_holidays: number[],
   unjustified_absences: number[],
-  worked_weekends: number[]
+  worked_weekends: number[],
+  vacation: number[],
+  unpaid_leave: number[]
 ) {
-
   let total_worked_6h = 0;
   let total_worked_8h = 0;
+
+  let worked_days_6h = [];
+  let worked_days_8h = [];
+  let worked_days = [];
 
   const lastDay = new Date(year, month, 0).getDate();
 
@@ -33,19 +30,28 @@ export async function getTotalWorkshift(
       year,
       worked_holidays,
       unjustified_absences,
-      worked_weekends
+      worked_weekends,
+      vacation,
+      unpaid_leave
     );
 
     if (workShift === DayType.Day8h) {
       total_worked_8h++;
+      worked_days_8h.push(day);
+      worked_days.push(day);
     } else if (workShift === DayType.Day6h) {
       total_worked_6h++;
+      worked_days_6h.push(day);
+      worked_days.push(day);
     }
   }
 
   return {
     total_worked_6h,
     total_worked_8h,
+    worked_days_6h,
+    worked_days_8h,
+    worked_days
   };
 }
 
@@ -56,11 +62,21 @@ function getWorkShiftByDay(
   year: number,
   worked_holidays: number[],
   unjustified_absences: number[],
-  worked_weekends: number[]
+  worked_weekends: number[],
+  vacation: number[],
+  unpaid_leave: number[]
 ) {
+  if (vacation.includes(day)) {
+    return DayType.DayOff;
+  }
+
+  if (unpaid_leave.includes(day)) {
+    return DayType.DayOff;
+  }
+
   const dayOfWeek = getDayOfWeek(day, month, year);
 
-  if (employee.work_shift == "8h") {
+  if (employee.work_shift == '8h') {
     if (unjustified_absences.includes(day)) {
       return DayType.DayOff;
     }
@@ -74,23 +90,19 @@ function getWorkShiftByDay(
     return DayType.DayOff;
   }
 
-  if (employee.work_shift == "6h") {
-    if (
-      unjustified_absences.includes(day) ||
-      isHoliday(day, month, year) ||
-      !isBusinessDay(dayOfWeek)
-    ) {
+  if (employee.work_shift == '6h') {
+    if (unjustified_absences.includes(day) || isHoliday(day, month, year) || !isBusinessDay(dayOfWeek)) {
       return DayType.DayOff;
     }
 
     return DayType.Day6h;
   }
 
-  throw "Failed to get workshift for this day. Please check the employee/workdays informations";
+  throw 'Failed to get workshift for this day. Please check the employee/workdays informations';
 }
 
 export function isBusinessDay(day: string) {
-  return day != "Sunday" && day != "Saturday";
+  return day != 'Sunday' && day != 'Saturday';
 }
 
 export function getDayOfWeek(day: number, month: number, year: number) {
@@ -102,4 +114,12 @@ enum DayType {
   DayOff,
   Day8h,
   Day6h,
+}
+
+export function parseCsvToList(list: string) {
+  if (list == "") {
+    return [];
+  }
+  
+  return list.split(";").map((day: string) => Number(day));
 }

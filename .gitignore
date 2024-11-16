@@ -5,3 +5,4 @@ dist
 .env
 draw.txt
 db_employees-rsv.csv
+db_worked_days_11_2024.csv

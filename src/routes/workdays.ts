@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
-import { getTotalWorkshift } from 'workdaysService.js';
+import { getTotalWorkshift, parseCsvToList } from 'workdaysService.js';
 import { findEmployeeById } from './employees.js';
 import { prisma } from '@db/prisma.js';
+import { readFileSync } from 'fs';
+import { parse } from 'csv-parse/sync';
 
 export const workdaysRouter = express.Router();
 
@@ -87,6 +89,86 @@ workdaysRouter.get('/employee/:id/workdays', async (req: Request, res: Response)
   }
 });
 
+workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Response) => {
+  const file = readFileSync('employee-in/db_worked_days_11_2024.csv', 'utf-8');
+
+  const workDays = parse(file, {
+    columns: true,
+    skip_empty_lines: true,
+  });
+
+  try {
+    for (const workedDay of workDays) {
+      const employeeId = Number(workedDay.employee_id);
+      const employee = await findEmployeeById(employeeId);
+
+      if (!employee) {
+        res.status(404).json({ error: `Employee ${employeeId} not found` });
+        return;
+      }
+
+      let { worked_holidays, worked_weekends, vacation, unpaid_leave, unjustified_absences, month, year } = workedDay;
+
+      worked_holidays = parseCsvToList(worked_holidays);
+      worked_weekends = parseCsvToList(worked_weekends);
+      vacation = parseCsvToList(vacation);
+      unpaid_leave = parseCsvToList(unpaid_leave);
+      unjustified_absences = parseCsvToList(unjustified_absences);
+
+      month = Number(month);
+      year = Number(year);
+
+      const { total_worked_6h, total_worked_8h, worked_days_6h, worked_days_8h, worked_days } = await getTotalWorkshift(
+        employee,
+        year,
+        month,
+        worked_holidays,
+        unjustified_absences,
+        worked_weekends,
+        vacation,
+        unpaid_leave
+      );
+
+      const data = {
+        worked_holidays,
+        worked_weekends,
+        vacation,
+        unpaid_leave,
+        unjustified_absences,
+        worked_6h: total_worked_6h,
+        worked_days_6h,
+        worked_8h: total_worked_8h,
+        worked_days_8h,
+        total_worked_days: total_worked_6h + total_worked_8h,
+        worked_days,
+      };
+
+      await prisma.workdays.upsert({
+        where: {
+          employee_id_month_year: {
+            employee_id: employeeId,
+            month,
+            year,
+          },
+        },
+        update: {
+          ...data,
+        },
+        create: {
+          employee_id: employeeId,
+          ...data,
+          month,
+          year,
+        },
+      });
+    }
+    res.status(200).send(`Employees workdays updated successfully.`);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Failed to update employee' });
+  }
+});
+
 workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
   try {
@@ -97,25 +179,31 @@ workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response)
       return;
     }
 
-    const { worked_holidays, worked_weekends, vacation, unjustified_absences, month, year } = req.body;
+    const { worked_holidays, worked_weekends, vacation, unpaid_leave, unjustified_absences, month, year } = req.body;
 
-    const { total_worked_6h, total_worked_8h } = await getTotalWorkshift(
+    const { total_worked_6h, total_worked_8h, worked_days_6h, worked_days_8h, worked_days } = await getTotalWorkshift(
       employee,
       year,
       month,
       worked_holidays,
       unjustified_absences,
-      worked_weekends
+      worked_weekends,
+      vacation,
+      unpaid_leave
     );
 
     const data = {
       worked_holidays,
       worked_weekends,
       vacation,
+      unpaid_leave,
       unjustified_absences,
-      total_worked_days: total_worked_6h + total_worked_8h,
       worked_6h: total_worked_6h,
+      worked_days_6h,
       worked_8h: total_worked_8h,
+      worked_days_8h,
+      total_worked_days: total_worked_6h + total_worked_8h,
+      worked_days,
     };
 
     await prisma.workdays.upsert({
