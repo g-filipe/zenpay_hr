@@ -86,7 +86,7 @@ employeeRouter.post('/employee', async (req: Request, res: Response) => {
 });
 
 employeeRouter.post('/employee/upload', async (req: Request, res: Response) => {
-  const file = readFileSync('employee-in/db_employees-rsv.csv', 'utf-8');
+  const file = readFileSync('employee-in/db_employees-rsv-copy.csv', 'utf-8');
 
   const employees = parse(file, {
     columns: true,
@@ -167,6 +167,7 @@ employeeRouter.put('/employee/:id', async (req: Request, res: Response) => {
           cpf: req.body.cpf,
           work_shift: req.body.work_shift,
           work_schedule: req.body.work_schedule,
+          contract_type: req.body.contract_type,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
         },
       });
     });
@@ -221,9 +222,10 @@ export async function findEmployeeById(employeeId: number) {
     },
     include: {
       departments: {
-        select: {
+        include: {
           department: {
             select: {
+              created_at: true,
               id: true,
               name: true,
               leader_id: true,

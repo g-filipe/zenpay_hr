@@ -5,7 +5,8 @@ import { prisma } from '@db/prisma.js';
 import { readFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 import { generateMealVoucher } from 'benefits/meal-voucher/mealVoucherService.js';
-import { Employee } from '@models/employee.js';
+import { exportToPDF } from 'report-test.js';
+import { execSync } from 'child_process';
 
 export const workdaysRouter = express.Router();
 
@@ -92,7 +93,7 @@ workdaysRouter.get('/employee/:id/workdays', async (req: Request, res: Response)
 });
 
 workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Response) => {
-  const file = readFileSync('employee-in/db_worked_days_11_2024.csv', 'utf-8');
+  const file = readFileSync('employee-in/db_worked_days_01_2025.csv', 'utf-8');
 
   const workDays = parse(file, {
     columns: true,
@@ -100,6 +101,7 @@ workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Respo
   });
 
   try {
+    const reportDataList = [];
     for (const workedDay of workDays) {
       const employeeId = Number(workedDay.employee_id);
       const employee = await findEmployeeById(employeeId);
@@ -163,8 +165,28 @@ workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Respo
           year,
         },
       });
-      await generateMealVoucher(employee, workdaysSheet);
+
+      if (employee.contract_type == 'estagio') {
+        continue;
+      }
+
+      const mealVoucherReport = await generateMealVoucher(employee, workdaysSheet);
+
+      execSync(`mkdir -p meal-voucher-reports/${month}-${year}`);
+      const reportData = {
+        employee,
+        departments: employee.departments.map((department) => department.department),
+        leaderName: employee.departments[0].department.leader?.name,
+        workdays: workdaysSheet,
+        mealVoucher: mealVoucherReport,
+      };
+      reportDataList.push(reportData);
+      await exportToPDF([reportData], `./meal-voucher-reports/${month}-${year}/${employee.name}.pdf`);
     }
+    await exportToPDF(
+      reportDataList,
+      `./meal-voucher-reports/${workDays[0].month}-${workDays[0].year}/relatório-vale-alimentação.pdf`
+    );
 
     res.status(200).send(`Employees workdays updated successfully.`);
   } catch (error) {
@@ -174,11 +196,15 @@ workdaysRouter.post('/employee/workdays/upload', async (req: Request, res: Respo
 });
 
 workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response) => {
+  console.log(`PUT /employee/${req.params.id}/workdays foi chamado`);
+
   const employeeId = Number(req.params.id);
+
   try {
     const employee = await findEmployeeById(employeeId);
 
     if (!employee) {
+      console.log(`Funcionário ${employeeId} não encontrado`);
       res.status(404).json({ error: `Employee ${employeeId} not found` });
       return;
     }
@@ -210,7 +236,7 @@ workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response)
       worked_days,
     };
 
-    await prisma.workdays.upsert({
+    const workdaysSheet = await prisma.workdays.upsert({
       where: {
         employee_id_month_year: {
           employee_id: employeeId,
@@ -228,6 +254,21 @@ workdaysRouter.put('/employee/:id/workdays', async (req: Request, res: Response)
         year,
       },
     });
+
+    const mealVoucherReport = await generateMealVoucher(employee, workdaysSheet);
+
+    execSync(`mkdir -p meal-voucher-reports/${month}-${year}`);
+
+    const reportData = [
+      {
+        employee,
+        departments: employee.departments.map((department) => department.department),
+        leaderName: employee.departments[0].department.leader?.name,
+        workdays: workdaysSheet,
+        mealVoucher: mealVoucherReport,
+      },
+    ];
+    await exportToPDF(reportData, `./meal-voucher-reports/${month}-${year}/${employee.name}.pdf`);
 
     res.status(200).send(`${employee.name} - worked days sheet updated`);
   } catch (error) {

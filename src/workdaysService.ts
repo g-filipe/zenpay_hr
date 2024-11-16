@@ -9,6 +9,7 @@ export async function getTotalWorkshift(
   month: number,
   worked_holidays: number[],
   unjustified_absences: number[],
+  // unjustified_absences_previous_month: number[],
   worked_weekends: number[],
   vacation: number[],
   unpaid_leave: number[]
@@ -30,6 +31,7 @@ export async function getTotalWorkshift(
       year,
       worked_holidays,
       unjustified_absences,
+      // unjustified_absences_previous_month,
       worked_weekends,
       vacation,
       unpaid_leave
@@ -62,6 +64,7 @@ function getWorkShiftByDay(
   year: number,
   worked_holidays: number[],
   unjustified_absences: number[],
+  // unjustified_absences_previous_month: number[],
   worked_weekends: number[],
   vacation: number[],
   unpaid_leave: number[]
@@ -80,6 +83,12 @@ function getWorkShiftByDay(
     if (unjustified_absences.includes(day)) {
       return DayType.DayOff;
     }
+
+   // TODO REDUÇÃO DO DIA OLHANDO MÊS ANTERIOR
+    // if (unjustified_absences_previous_month.includes(day)) {
+    //   return DayType.DayOff;
+    // }
+
     if (worked_holidays.includes(day) || isBusinessDay(dayOfWeek)) {
       return DayType.Day8h;
     }
@@ -89,7 +98,7 @@ function getWorkShiftByDay(
 
     return DayType.DayOff;
   }
-
+  // TODO REDUÇÃO DO DIA OLHANDO MÊS ANTERIOR
   if (employee.work_shift == '6h') {
     if (unjustified_absences.includes(day) || isHoliday(day, month, year) || !isBusinessDay(dayOfWeek)) {
       return DayType.DayOff;

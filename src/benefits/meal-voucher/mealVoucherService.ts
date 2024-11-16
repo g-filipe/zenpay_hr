@@ -124,4 +124,3 @@ export async function generateMealVoucher(employee: Employee, workdays: Workdays
     });
   });
 }
-

@@ -10,7 +10,7 @@ import { mealVoucherRouter } from "@routes/mealVoucher.js";
 // await mongoConfig();
 
 const app = express();
-const port = 3000;
+const port = 3008;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
