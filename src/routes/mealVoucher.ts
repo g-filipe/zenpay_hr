@@ -1,6 +1,4 @@
 import express, { Request, Response } from 'express';
-import { getTotalWorkshift } from 'workdaysService.js';
-import { findEmployeeById } from './employees.js';
 import { prisma } from '@db/prisma.js';
 import { calculateMealVoucher } from 'benefits/meal-voucher/mealVoucherService.js';
 
@@ -16,6 +14,7 @@ mealVoucherRouter.get('/employee/benefits/meal-voucher', async (req: Request, re
             year: Number(req.query.year),
           },
         },
+        contract_type: 'efetivo',
       },
       include: {
         work_days: {
@@ -138,7 +137,7 @@ mealVoucherRouter.post('/employee/:id/benefits/meal-voucher', async (req: Reques
       res.status(400).json({ error: `No workdays registered for this Employee ${employeeId} - ${employee.name}.` });
       return;
     }
-   const mealVoucher = await prisma.$transaction(async (prisma) => {
+    const mealVoucher = await prisma.$transaction(async (prisma) => {
       if (employee.meal_vouchers.length != 0) {
         await prisma.mealVoucher.delete({
           where: {

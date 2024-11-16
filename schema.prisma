@@ -15,6 +15,7 @@ model Employee {
   name          String
   work_schedule String
   work_shift    String
+  contract_type String
 
   led_departments Department[]          @relation("LeadershipDepartments")
   departments     EmployeeDepartments[]

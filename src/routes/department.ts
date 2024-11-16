@@ -23,6 +23,11 @@ departmentRouter.get("/department", async (_, res: Response) => {
           },
         },
       },
+      orderBy: [
+        {
+          id: 'asc',
+        },
+      ],
     });
     res.status(200).json(departmentList);
   } catch (error) {

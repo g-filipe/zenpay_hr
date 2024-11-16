@@ -1,9 +1,11 @@
-import express, { Request, Response } from "express";
-import { prisma } from "@db/prisma.js";
+import express, { Request, Response } from 'express';
+import { prisma } from '@db/prisma.js';
+import { readFileSync } from 'fs';
+import { parse } from 'csv-parse/sync';
 
 export const employeeRouter = express.Router();
 
-employeeRouter.get("/employee", async (_, res: Response) => {
+employeeRouter.get('/employee', async (_, res: Response) => {
   try {
     const employeeList = await prisma.employee.findMany({
       include: {
@@ -22,18 +24,18 @@ employeeRouter.get("/employee", async (_, res: Response) => {
       },
       orderBy: [
         {
-          id: "asc",
+          name: 'asc',
         },
       ],
     });
     res.status(200).json(employeeList);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to retrieve employee list" });
+    res.status(500).json({ error: 'Failed to retrieve employee list' });
   }
 });
 
-employeeRouter.get("/employee/:id", async (req: Request, res: Response) => {
+employeeRouter.get('/employee/:id', async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
 
   try {
@@ -45,22 +47,24 @@ employeeRouter.get("/employee/:id", async (req: Request, res: Response) => {
     }
     res.status(200).json(employee);
   } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve employee" });
+    res.status(500).json({ error: 'Failed to retrieve employee' });
   }
 });
 
-employeeRouter.post("/employee", async (req: Request, res: Response) => {
+employeeRouter.post('/employee', async (req: Request, res: Response) => {
   try {
     const cpfExistence = await verifyCpfExistence(req.body.cpf);
     if (cpfExistence) {
-      res.status(400).json({ error: "CPF already in use" });
+      res.status(400).json({ error: 'CPF already in use' });
       return;
     }
 
     const newEmployee = await prisma.employee.create({
       data: {
+        id: req.body.id,
         name: req.body.name,
         cpf: req.body.cpf,
+        contract_type: req.body.contract_type,
         work_shift: req.body.work_shift,
         work_schedule: req.body.work_schedule,
         departments: {
@@ -71,17 +75,66 @@ employeeRouter.post("/employee", async (req: Request, res: Response) => {
       },
     });
 
-    res.status(200).json({
-      message: "Registerd Successfully",
+    res.status(201).json({
+      message: 'Registerd Successfully',
       employee: newEmployee,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to register employee" });
+    res.status(500).json({ error: 'Failed to register employee' });
   }
 });
 
-employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
+employeeRouter.post('/employee/upload', async (req: Request, res: Response) => {
+  const file = readFileSync('employee-in/db_employees-rsv.csv', 'utf-8');
+
+  const employees = parse(file, {
+    columns: true,
+    skip_empty_lines: true,
+  });
+
+  try {
+    for (const employee of employees) {
+      const idExistence = await findEmployeeById(Number(employee.id));
+      if (idExistence) {
+        console.log(`${employee.name} - Employee Id already in use`);
+        continue;
+      }
+
+      const cpfExistence = await verifyCpfExistence(employee.cpf);
+      if (cpfExistence) {
+        console.log(`${employee.name} - CPF already in use`);
+        continue;
+      }
+
+      const newEmployee = await prisma.employee.create({
+        data: {
+          id: Number(employee.id),
+          name: employee.name,
+          cpf: employee.cpf,
+          contract_type: employee.contract_type,
+          work_shift: employee.work_shift,
+          work_schedule: employee.work_schedule,
+          departments: {
+            create: employee.department_id.split(';').map((id: string) => ({
+              department: { connect: { id: Number(id) } },
+            })),
+          },
+        },
+      });
+      console.log(`${newEmployee.name} - created successfully`);
+    }
+
+    res.status(200).json({
+      message: 'Registerd Successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to register employee' });
+  }
+});
+
+employeeRouter.put('/employee/:id', async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
   try {
     const employee = await findEmployeeById(employeeId);
@@ -119,16 +172,16 @@ employeeRouter.put("/employee/:id", async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      message: "Updated Successfully",
+      message: 'Updated Successfully',
       updatedEmployee,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update employee" });
+    res.status(500).json({ error: 'Failed to update employee' });
   }
 });
 
-employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
+employeeRouter.delete('/employee/:id', async (req: Request, res: Response) => {
   const employeeId = Number(req.params.id);
   try {
     const employee = await findEmployeeById(employeeId);
@@ -149,7 +202,7 @@ employeeRouter.delete("/employee/:id", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to delete employee" });
+    res.status(500).json({ error: 'Failed to delete employee' });
   }
 });
 

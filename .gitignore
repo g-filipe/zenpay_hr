@@ -4,3 +4,4 @@ node_modules
 dist
 .env
 draw.txt
+db_employees-rsv.csv
